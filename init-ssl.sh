@@ -15,7 +15,7 @@ SSL_ROOT_CRT="$SSL_DIR/root.crt"
 
 SSL_V3_EXT="$SSL_DIR/v3.ext"
 
-POSTGRES_CONF_FILE="$PGDATA/postgresql.conf"
+POSTGRES_CONF_FILE_SSL_PARTIAL="$PGDATA/postgresql.conf-ssl-partial"
 
 # Use sudo to create the directory as root
 sudo mkdir -p "$SSL_DIR"
@@ -49,9 +49,16 @@ openssl x509 -req -in "$SSL_SERVER_CSR" -extfile "$SSL_V3_EXT" -extensions v3_re
 chown postgres:postgres "$SSL_SERVER_CRT"
 
 # PostgreSQL configuration, enable ssl and set paths to certificate files
-cat >> "$POSTGRES_CONF_FILE" <<EOF
+cat > "$POSTGRES_CONF_FILE_SSL_PARTIAL" <<EOF
+
 ssl = on
 ssl_cert_file = '$SSL_SERVER_CRT'
 ssl_key_file = '$SSL_SERVER_KEY'
 ssl_ca_file = '$SSL_ROOT_CRT'
+
 EOF
+
+# Write the final SSL configuration to the postgresql.conf file
+# It is for the initial run. For the subsequent runs, the script in wrapper.sh
+# will take care of it.
+/usr/local/bin/write-config.sh
